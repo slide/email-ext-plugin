@@ -1,3 +1,5 @@
+import hudson.plugins.emailext.plugins.OAuth2Flow
+
 // Namespaces
 f = namespace("/lib/form")
 c = namespace("/lib/credentials")
@@ -29,9 +31,10 @@ f.advanced {
     f.entry(field: "useTls", title: _("Use TLS")) {
         f.checkbox()
     }
-    f.entry(field: "useOAuth2", title: _("Use OAuth 2.0")) {
-        f.checkbox()
-    }
+    f.dropdownDescriptorSelector(title: _("OAuth 2.0 Configuration"),
+            descriptors: OAuth2Flow.all(), field: "oAuth2Flow",
+            default: descriptor.defaultOAuth2Flow
+    )
     f.entry(field: "advProperties", title: _("Advanced Email Properties")) {
         f.textarea()
     }

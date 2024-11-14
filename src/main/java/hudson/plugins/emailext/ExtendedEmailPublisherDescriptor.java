@@ -32,6 +32,7 @@ import java.io.StringReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 import java.util.function.BiFunction;
@@ -182,16 +183,36 @@ public final class ExtendedEmailPublisherDescriptor extends BuildStepDescriptor<
                     }
 
                     StandardUsernamePasswordCredentials c = CredentialsProvider.findCredentialById(
-                            acc.getCredentialsId(), StandardUsernamePasswordCredentials.class, run, domainRequirement);
+                            acc.getCredentialsId(),
+                            StandardUsernamePasswordCredentials.class,
+                            run,
+                            Collections.singletonList(domainRequirement));
 
                     if (c == null) {
                         return null;
                     }
 
-                    return new PasswordAuthentication(c.getUsername(), Secret.toString(c.getPassword()));
+                    Secret password = c.getPassword();
+                    if (acc.hasOAuth2Flow()) {
+                        try {
+                            password = acc.getOAuth2Flow().getToken(c);
+                        } catch (Exception e) {
+                            LOGGER.log(
+                                    Level.SEVERE,
+                                    "Error retrieving token using OAuth 2.0 Flow \""
+                                            + acc.getOAuth2Flow()
+                                                    .getDescriptor()
+                                                    .getDisplayName() + "\"");
+                            return null;
+                        }
+                    }
+
+                    return new PasswordAuthentication(c.getUsername(), Secret.toString(password));
                 }
             };
 
+    // used during deserialization
+    @SuppressWarnings("unused")
     private Object readResolve() {
         if (smtpHost != null) {
             mailAccount.setSmtpHost(smtpHost);
@@ -244,6 +265,7 @@ public final class ExtendedEmailPublisherDescriptor extends BuildStepDescriptor<
         mailAccount.setDefaultAccount(true);
     }
 
+    @SuppressWarnings("unused")
     @Initializer(after = InitMilestone.EXTENSIONS_AUGMENTED, before = InitMilestone.JOB_LOADED)
     public static void autoConfigure() {
         ExtendedEmailPublisherDescriptor descriptor = ExtendedEmailPublisher.descriptor();
@@ -371,7 +393,7 @@ public final class ExtendedEmailPublisherDescriptor extends BuildStepDescriptor<
             props.put("mail.smtp.auth", "true");
         }
 
-        if (acc.isUseOAuth2()) {
+        if (acc.hasOAuth2Flow()) {
             props.put("mail.smtp.auth.mechanisms", "XOAUTH2");
         }
 

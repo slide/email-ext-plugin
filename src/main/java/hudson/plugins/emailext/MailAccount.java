@@ -17,6 +17,9 @@ import hudson.model.Descriptor;
 import hudson.model.Item;
 import hudson.model.Queue;
 import hudson.model.queue.Tasks;
+import hudson.plugins.emailext.plugins.OAuth2Flow;
+import hudson.plugins.emailext.plugins.oauth2.DirectTokenOAuth2Flow;
+import hudson.plugins.emailext.plugins.oauth2.NoOAuth2Flow;
 import hudson.security.ACL;
 import hudson.util.FormValidation;
 import hudson.util.FormValidation.Kind;
@@ -45,7 +48,8 @@ public class MailAccount extends AbstractDescribableImpl<MailAccount> {
     private String advProperties;
     private boolean defaultAccount;
 
-    private boolean useOAuth2;
+    private transient boolean useOAuth2;
+    private OAuth2Flow oauth2Flow;
 
     @Deprecated
     public MailAccount(JSONObject jo) {
@@ -167,10 +171,10 @@ public class MailAccount extends AbstractDescribableImpl<MailAccount> {
                 }
             }
 
-            if (CredentialsProvider.listCredentials(
+            if (CredentialsProvider.listCredentialsInItem(
                             StandardUsernamePasswordCredentials.class,
                             item,
-                            item instanceof Queue.Task t ? Tasks.getAuthenticationOf(t) : ACL.SYSTEM,
+                            item instanceof Queue.Task t ? Tasks.getAuthenticationOf2(t) : ACL.SYSTEM2,
                             null,
                             CredentialsMatchers.withId(value))
                     .isEmpty()) {
@@ -181,6 +185,10 @@ public class MailAccount extends AbstractDescribableImpl<MailAccount> {
                         insecureAuthValidation, FormValidation.error("Cannot find currently selected credentials")));
             }
             return insecureAuthValidation;
+        }
+
+        public OAuth2Flow getDefaultOAuth2Flow() {
+            return new NoOAuth2Flow();
         }
     }
 
@@ -265,13 +273,32 @@ public class MailAccount extends AbstractDescribableImpl<MailAccount> {
         this.useTls = useTls;
     }
 
+    @Deprecated
     public boolean isUseOAuth2() {
-        return useOAuth2;
+        return hasOAuth2Flow();
+    }
+
+    @Deprecated
+    @DataBoundSetter
+    public void setUseOAuth2(boolean useOAuth2) {
+        if (useOAuth2) {
+            oauth2Flow = new DirectTokenOAuth2Flow();
+        } else {
+            oauth2Flow = new NoOAuth2Flow();
+        }
+    }
+
+    public OAuth2Flow getOAuth2Flow() {
+        return oauth2Flow;
     }
 
     @DataBoundSetter
-    public void setUseOAuth2(boolean useOAuth2) {
-        this.useOAuth2 = useOAuth2;
+    public void setOAuth2Flow(OAuth2Flow oauth2Flow) {
+        this.oauth2Flow = oauth2Flow;
+    }
+
+    public boolean hasOAuth2Flow() {
+        return oauth2Flow != null && !(oauth2Flow instanceof NoOAuth2Flow);
     }
 
     public String getAdvProperties() {
@@ -287,6 +314,15 @@ public class MailAccount extends AbstractDescribableImpl<MailAccount> {
         if (StringUtils.isBlank(credentialsId) && StringUtils.isNotBlank(smtpUsername) && smtpPassword != null) {
             migrateCredentials();
         }
+
+        if (useOAuth2 && oauth2Flow == null) {
+            // the old useOAuth2 used the direct method of the token being in the credential password
+            oauth2Flow = new DirectTokenOAuth2Flow();
+        }
+
+        if (oauth2Flow == null) {
+            oauth2Flow = new NoOAuth2Flow();
+        }
         return this;
     }
 
@@ -296,8 +332,13 @@ public class MailAccount extends AbstractDescribableImpl<MailAccount> {
             domainRequirement = new HostnamePortRequirement(smtpHost, Integer.parseInt(smtpPort));
         }
         final List<StandardUsernamePasswordCredentials> credentials = CredentialsMatchers.filter(
-                CredentialsProvider.lookupCredentials(
-                        StandardUsernamePasswordCredentials.class, Jenkins.get(), ACL.SYSTEM, domainRequirement),
+                CredentialsProvider.lookupCredentialsInItemGroup(
+                        StandardUsernamePasswordCredentials.class,
+                        Jenkins.get(),
+                        ACL.SYSTEM2,
+                        domainRequirement == null
+                                ? Collections.emptyList()
+                                : Collections.singletonList(domainRequirement)),
                 CredentialsMatchers.withUsername(smtpUsername));
         for (final StandardUsernamePasswordCredentials cred : credentials) {
             if (StringUtils.equals(smtpPassword.getPlainText(), Secret.toString(cred.getPassword()))) {
