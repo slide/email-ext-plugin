@@ -1,14 +1,13 @@
 package hudson.plugins.emailext.plugins.oauth2;
 
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
-import com.microsoft.aad.msal4j.IAccount;
+import com.microsoft.aad.msal4j.ClientCredentialFactory;
+import com.microsoft.aad.msal4j.ClientCredentialParameters;
+import com.microsoft.aad.msal4j.ConfidentialClientApplication;
 import com.microsoft.aad.msal4j.IAuthenticationResult;
-import com.microsoft.aad.msal4j.MsalException;
-import com.microsoft.aad.msal4j.PublicClientApplication;
-import com.microsoft.aad.msal4j.SilentParameters;
-import com.microsoft.aad.msal4j.UserNamePasswordParameters;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Extension;
+import hudson.plugins.emailext.Messages;
 import hudson.plugins.emailext.plugins.OAuth2Flow;
 import hudson.plugins.emailext.plugins.OAuth2FlowDescriptor;
 import hudson.util.Secret;
@@ -28,7 +27,7 @@ public class Office365UsernamePasswordOAuth2Flow extends OAuth2Flow {
     private String authority = DEFAULT_AUTHORITY;
     private String scope = DEFAULT_SCOPE;
     private String clientId;
-    private transient PublicClientApplication pca;
+    private transient ConfidentialClientApplication clientApplication;
 
     @DataBoundConstructor
     public Office365UsernamePasswordOAuth2Flow() {}
@@ -63,57 +62,15 @@ public class Office365UsernamePasswordOAuth2Flow extends OAuth2Flow {
     @Override
     @Restricted(NoExternalUse.class)
     public Secret getToken(StandardUsernamePasswordCredentials credentials) throws Exception {
-        if (pca == null) {
-            pca = PublicClientApplication.builder(clientId).authority(authority).build();
+        if (clientApplication == null) {
+            clientApplication = ConfidentialClientApplication.builder(clientId, ClientCredentialFactory.createFromSecret(credentials.getPassword().getPlainText())).authority(authority).build();
         }
 
-        IAuthenticationResult result;
-        // Get list of accounts from the application's token cache, and search them for the configured username
-        // getAccounts() will be empty on this first call, as accounts are added to the cache when acquiring a token
-        Set<IAccount> accountsInCache = pca.getAccounts().join();
-        IAccount account = getAccountByUsername(accountsInCache, credentials.getUsername());
         Set<String> scopes = new HashSet<>(Arrays.stream(scope.split(",")).toList());
-        // Attempt to acquire token when user's account is not in the application's token cache
-        result = acquireTokenUsernamePassword(
-                pca, scopes, account, credentials.getUsername(), credentials.getPassword());
+        scopes.add("https://graph.microsoft.com/.default");
+        ClientCredentialParameters parameters = ClientCredentialParameters.builder(scopes).build();
+        IAuthenticationResult result = clientApplication.acquireToken(parameters).get();
         return result != null ? Secret.fromString(result.accessToken()) : null;
-    }
-
-    private IAccount getAccountByUsername(Set<IAccount> accounts, String username) {
-        if (!accounts.isEmpty()) {
-            for (IAccount account : accounts) {
-                if (account.username().equals(username)) {
-                    return account;
-                }
-            }
-        }
-        return null;
-    }
-
-    private IAuthenticationResult acquireTokenUsernamePassword(
-            PublicClientApplication pca, Set<String> scope, IAccount account, String username, Secret password)
-            throws Exception {
-        IAuthenticationResult result;
-        try {
-            SilentParameters silentParameters =
-                    SilentParameters.builder(scope).account(account).build();
-            // Try to acquire token silently. This will fail on the first acquireTokenUsernamePassword() call
-            // because the token cache does not have any data for the user you are trying to acquire a token for
-            result = pca.acquireTokenSilently(silentParameters).join();
-        } catch (Exception ex) {
-            if (ex.getCause() instanceof MsalException) {
-                UserNamePasswordParameters parameters = UserNamePasswordParameters.builder(
-                                scope, username, Secret.toString(password).toCharArray())
-                        .build();
-                // Try to acquire a token via username/password. If successful, you should see
-                // the token and account information printed out to console
-                result = pca.acquireToken(parameters).join();
-            } else {
-                // Handle other exceptions accordingly
-                throw ex;
-            }
-        }
-        return result;
     }
 
     @Extension
@@ -124,7 +81,7 @@ public class Office365UsernamePasswordOAuth2Flow extends OAuth2Flow {
         @NonNull
         @Override
         public String getDisplayName() {
-            return "Office365 OAuth 2.0 Username/Password Flow";
+            return Messages.Office365UsernamePasswordOAuth2Flow_DisplayName();
         }
 
         public String getDefaultAuthority() {

@@ -11,6 +11,7 @@ import com.cloudbees.plugins.credentials.domains.HostnamePortRequirement;
 import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Extension;
+import hudson.ExtensionPoint;
 import hudson.Util;
 import hudson.model.AbstractDescribableImpl;
 import hudson.model.Descriptor;
@@ -35,8 +36,9 @@ import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
+import org.kohsuke.stapler.StaplerRequest2;
 
-public class MailAccount extends AbstractDescribableImpl<MailAccount> {
+public class MailAccount extends AbstractDescribableImpl<MailAccount> implements ExtensionPoint {
     private String address;
     private String smtpHost;
     private String smtpPort = "25";
@@ -49,7 +51,7 @@ public class MailAccount extends AbstractDescribableImpl<MailAccount> {
     private boolean defaultAccount;
 
     private transient boolean useOAuth2;
-    private OAuth2Flow oauth2Flow;
+    private OAuth2Flow oAuth2Flow;
 
     @Deprecated
     public MailAccount(JSONObject jo) {
@@ -130,7 +132,7 @@ public class MailAccount extends AbstractDescribableImpl<MailAccount> {
             }
             return result.includeEmptyValue()
                     .includeMatchingAs(
-                            item instanceof Queue.Task t ? Tasks.getAuthenticationOf(t) : ACL.SYSTEM,
+                            item instanceof Queue.Task t ? Tasks.getAuthenticationOf2(t) : ACL.SYSTEM2,
                             item,
                             StandardUsernamePasswordCredentials.class,
                             Collections.emptyList(),
@@ -187,6 +189,7 @@ public class MailAccount extends AbstractDescribableImpl<MailAccount> {
             return insecureAuthValidation;
         }
 
+        @SuppressWarnings("unused") // used in config.groovy
         public OAuth2Flow getDefaultOAuth2Flow() {
             return new NoOAuth2Flow();
         }
@@ -282,23 +285,23 @@ public class MailAccount extends AbstractDescribableImpl<MailAccount> {
     @DataBoundSetter
     public void setUseOAuth2(boolean useOAuth2) {
         if (useOAuth2) {
-            oauth2Flow = new DirectTokenOAuth2Flow();
+            oAuth2Flow = new DirectTokenOAuth2Flow();
         } else {
-            oauth2Flow = new NoOAuth2Flow();
+            oAuth2Flow = new NoOAuth2Flow();
         }
     }
 
     public OAuth2Flow getOAuth2Flow() {
-        return oauth2Flow;
+        return oAuth2Flow;
     }
 
     @DataBoundSetter
-    public void setOAuth2Flow(OAuth2Flow oauth2Flow) {
-        this.oauth2Flow = oauth2Flow;
+    public void setOAuth2Flow(OAuth2Flow oAuth2Flow) {
+        this.oAuth2Flow = oAuth2Flow;
     }
 
     public boolean hasOAuth2Flow() {
-        return oauth2Flow != null && !(oauth2Flow instanceof NoOAuth2Flow);
+        return oAuth2Flow != null && !(oAuth2Flow instanceof NoOAuth2Flow);
     }
 
     public String getAdvProperties() {
@@ -315,13 +318,13 @@ public class MailAccount extends AbstractDescribableImpl<MailAccount> {
             migrateCredentials();
         }
 
-        if (useOAuth2 && oauth2Flow == null) {
+        if (useOAuth2 && oAuth2Flow == null) {
             // the old useOAuth2 used the direct method of the token being in the credential password
-            oauth2Flow = new DirectTokenOAuth2Flow();
+            oAuth2Flow = new DirectTokenOAuth2Flow();
         }
 
-        if (oauth2Flow == null) {
-            oauth2Flow = new NoOAuth2Flow();
+        if (oAuth2Flow == null) {
+            oAuth2Flow = new NoOAuth2Flow();
         }
         return this;
     }

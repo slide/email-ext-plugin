@@ -31,10 +31,11 @@ f.advanced {
     f.entry(field: "useTls", title: _("Use TLS")) {
         f.checkbox()
     }
-    f.dropdownDescriptorSelector(title: _("OAuth 2.0 Configuration"),
-            descriptors: OAuth2Flow.all(), field: "oAuth2Flow",
-            default: descriptor.defaultOAuth2Flow
-    )
+    f.entry(field: "OAuth2Flow", title: _("OAuth 2.0 Configuration")) {
+        f.dropdownDescriptorSelector(descriptors: OAuth2Flow.all(),
+                default: descriptor.defaultOAuth2Flow
+        )
+    }
     f.entry(field: "advProperties", title: _("Advanced Email Properties")) {
         f.textarea()
     }

@@ -3,6 +3,7 @@ package hudson.plugins.emailext.plugins.oauth2;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Extension;
+import hudson.plugins.emailext.Messages;
 import hudson.plugins.emailext.plugins.OAuth2Flow;
 import hudson.plugins.emailext.plugins.OAuth2FlowDescriptor;
 import hudson.util.Secret;
@@ -24,7 +25,7 @@ public class NoOAuth2Flow extends OAuth2Flow {
         @NonNull
         @Override
         public String getDisplayName() {
-            return "No OAuth 2.0 Flow";
+            return Messages.NoOAuth2Flow_DisplayName();
         }
     }
 }

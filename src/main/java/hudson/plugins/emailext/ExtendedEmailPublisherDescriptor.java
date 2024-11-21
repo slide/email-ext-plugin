@@ -740,7 +740,8 @@ public final class ExtendedEmailPublisherDescriptor extends BuildStepDescriptor<
                         .configuring(
                                 script,
                                 GroovyLanguage.get(),
-                                ApprovalContext.create().withCurrentUser());
+                                ApprovalContext.create().withCurrentUser(),
+                                true);
     }
 
     public @CheckForNull String getDefaultPostsendScript() {
@@ -757,7 +758,8 @@ public final class ExtendedEmailPublisherDescriptor extends BuildStepDescriptor<
                         .configuring(
                                 script,
                                 GroovyLanguage.get(),
-                                ApprovalContext.create().withCurrentUser());
+                                ApprovalContext.create().withCurrentUser(),
+                                true);
     }
 
     public List<GroovyScriptPath> getDefaultClasspath() {
@@ -819,14 +821,14 @@ public final class ExtendedEmailPublisherDescriptor extends BuildStepDescriptor<
     }
 
     @Override
-    public boolean configure(StaplerRequest2 req, JSONObject formData) throws FormException {
-        req.bindJSON(this, formData);
+    public boolean configure(StaplerRequest2 req, JSONObject json) throws FormException {
+        req.bindJSON(this, json);
         save();
-        return super.configure(req, formData);
+        return true;
     }
 
     private String nullify(String v) {
-        if (v != null && v.length() == 0) {
+        if (v != null && v.isEmpty()) {
             v = null;
         }
         return v;
@@ -858,7 +860,7 @@ public final class ExtendedEmailPublisherDescriptor extends BuildStepDescriptor<
             String testValue = value.trim();
             // we support an empty value (which means default)
             // or a number
-            if (testValue.length() > 0) {
+            if (!testValue.isEmpty()) {
                 Long.parseLong(testValue);
             }
             return FormValidation.ok();
