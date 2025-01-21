@@ -2,8 +2,8 @@ package hudson.plugins.emailext.plugins.oauth2.Office365UsernamePasswordOAuth2Fl
 
 f = namespace("/lib/form")
 
-f.entry(title: _("Authority"), field: "authority") {
-    f.textbox(default: descriptor.defaultAuthority)
+f.entry(title: _("Tenant ID"), field: "tenantId") {
+    f.textbox()
 }
 
 f.entry(title: _("Scope"), field: "scope") {

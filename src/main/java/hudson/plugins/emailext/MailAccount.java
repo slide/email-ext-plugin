@@ -36,7 +36,6 @@ import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
-import org.kohsuke.stapler.StaplerRequest2;
 
 public class MailAccount extends AbstractDescribableImpl<MailAccount> implements ExtensionPoint {
     private String address;

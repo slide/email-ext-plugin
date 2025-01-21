@@ -4,7 +4,6 @@ import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredenti
 import hudson.DescriptorExtensionList;
 import hudson.ExtensionPoint;
 import hudson.model.AbstractDescribableImpl;
-import hudson.model.Describable;
 import hudson.util.Secret;
 import jenkins.model.Jenkins;
 import org.kohsuke.accmod.Restricted;
