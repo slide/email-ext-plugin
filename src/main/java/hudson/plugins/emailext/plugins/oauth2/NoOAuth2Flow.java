@@ -9,8 +9,14 @@ import hudson.plugins.emailext.plugins.OAuth2FlowDescriptor;
 import hudson.util.Secret;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
+import org.kohsuke.stapler.DataBoundConstructor;
 
 public class NoOAuth2Flow extends OAuth2Flow {
+    @DataBoundConstructor
+    public NoOAuth2Flow() {
+
+    }
+
     @Override
     @Restricted(NoExternalUse.class)
     public Secret getToken(StandardUsernamePasswordCredentials credentials) throws Exception {

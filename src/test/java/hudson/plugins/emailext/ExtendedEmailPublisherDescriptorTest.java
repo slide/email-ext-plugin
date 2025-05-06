@@ -62,7 +62,6 @@ import org.htmlunit.html.HtmlSelect;
 import org.htmlunit.html.HtmlTextArea;
 import org.htmlunit.html.HtmlTextInput;
 import org.jenkinsci.plugins.scriptsecurity.scripts.ScriptApproval;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.JenkinsRule;
@@ -75,22 +74,20 @@ import org.mockito.Mockito;
 @WithJenkins
 class ExtendedEmailPublisherDescriptorTest {
 
-    private JenkinsRule j;
-
-    @BeforeEach
-    void setUp(JenkinsRule j) {
-        this.j = j;
-    }
-
     private static void assertTitlePage(HtmlPage page) {
+        assertNotNull(page);
         String actualTitle = page.getTitleText();
 
         assertTrue(actualTitle.startsWith("System"), "Should be at the Configure System page");
     }
 
     @Test
-    void testGlobalConfigDefaultState() throws Exception {
-        HtmlPage page = j.createWebClient().goTo("configure");
+    void testGlobalConfigDefaultState(JenkinsRule j) throws Exception {
+        HtmlPage page;
+
+        try(JenkinsRule.WebClient client = j.createWebClient()) {
+            page = client.goTo("configure");
+        }
 
         assertTitlePage(page);
 
@@ -193,10 +190,14 @@ class ExtendedEmailPublisherDescriptorTest {
 
     @Test
     @Issue("JENKINS-20030")
-    void testGlobalConfigSimpleRoundTrip() throws Exception {
+    void testGlobalConfigSimpleRoundTrip(JenkinsRule j) throws Exception {
         ExtendedEmailPublisherDescriptor descriptor =
                 j.jenkins.getDescriptorByType(ExtendedEmailPublisherDescriptor.class);
-        HtmlPage page = j.createWebClient().goTo("configure");
+        HtmlPage page;
+        try(JenkinsRule.WebClient client = j.createWebClient()) {
+            page = client.goTo("configure");
+        }
+        assertNotNull(page);
         HtmlTextInput defaultRecipients = page.getElementByName("_.defaultRecipients");
         defaultRecipients.setValue("mickey@disney.com");
         j.submit(page.getFormByName("config"));
@@ -206,28 +207,33 @@ class ExtendedEmailPublisherDescriptorTest {
 
     @Test
     @Issue("JENKINS-63367")
-    void testSmtpPortRetainsSetValue() throws Exception {
+    void testSmtpPortRetainsSetValue(JenkinsRule j) throws Exception {
         ExtendedEmailPublisherDescriptor descriptor =
                 j.jenkins.getDescriptorByType(ExtendedEmailPublisherDescriptor.class);
-        JenkinsRule.WebClient client = j.createWebClient();
-        HtmlPage page = client.goTo("configure");
-        HtmlNumberInput smtpPort = page.getElementByName("_.smtpPort");
-        smtpPort.setValue("587");
-        j.submit(page.getFormByName("config"));
+        try(JenkinsRule.WebClient client = j.createWebClient()) {
+            HtmlPage page = client.goTo("configure");
+            HtmlNumberInput smtpPort = page.getElementByName("_.smtpPort");
+            smtpPort.setValue("587");
+            j.submit(page.getFormByName("config"));
 
-        assertEquals("587", descriptor.getMailAccount().getSmtpPort());
+            assertEquals("587", descriptor.getMailAccount().getSmtpPort());
 
-        page = client.goTo("configure");
-        smtpPort = page.getElementByName("_.smtpPort");
-        assertEquals("587", smtpPort.getValue());
+            page = client.goTo("configure");
+            smtpPort = page.getElementByName("_.smtpPort");
+            assertEquals("587", smtpPort.getValue());
+        }
     }
 
     @Test
     @Issue("JENKINS-20133")
-    void testPrecedenceBulkSettingRoundTrip() throws Exception {
+    void testPrecedenceBulkSettingRoundTrip(JenkinsRule j) throws Exception {
         ExtendedEmailPublisherDescriptor descriptor =
                 j.jenkins.getDescriptorByType(ExtendedEmailPublisherDescriptor.class);
-        HtmlPage page = j.createWebClient().goTo("configure");
+        HtmlPage page;
+        try(JenkinsRule.WebClient client = j.createWebClient()) {
+            page = client.goTo("configure");
+        }
+        assertNotNull(page);
         HtmlCheckBoxInput addPrecedenceBulk = page.getElementByName("_.precedenceBulk");
         addPrecedenceBulk.setChecked(true);
         j.submit(page.getFormByName("config"));
@@ -237,10 +243,14 @@ class ExtendedEmailPublisherDescriptorTest {
 
     @Test
     @Issue("JENKINS-20133")
-    void testListIDRoundTrip() throws Exception {
+    void testListIDRoundTrip(JenkinsRule j) throws Exception {
         ExtendedEmailPublisherDescriptor descriptor =
                 j.jenkins.getDescriptorByType(ExtendedEmailPublisherDescriptor.class);
-        HtmlPage page = j.createWebClient().goTo("configure");
+        HtmlPage page;
+        try(JenkinsRule.WebClient client = j.createWebClient()) {
+            page = client.goTo("configure");
+        }
+        assertNotNull(page);
         HtmlTextInput listId = page.getElementByName("_.listId");
         listId.setValue("hammer");
 
@@ -250,10 +260,14 @@ class ExtendedEmailPublisherDescriptorTest {
     }
 
     @Test
-    void testAdvancedProperties() throws Exception {
+    void testAdvancedProperties(JenkinsRule j) throws Exception {
         ExtendedEmailPublisherDescriptor descriptor =
                 j.jenkins.getDescriptorByType(ExtendedEmailPublisherDescriptor.class);
-        HtmlPage page = j.createWebClient().goTo("configure");
+        HtmlPage page;
+        try(JenkinsRule.WebClient client = j.createWebClient()) {
+            page = client.goTo("configure");
+        }
+        assertNotNull(page);
         HtmlTextArea advProperties = page.getElementByName("_.advProperties");
         advProperties.setText("mail.smtp.starttls.enable=true");
         j.submit(page.getFormByName("config"));
@@ -263,11 +277,10 @@ class ExtendedEmailPublisherDescriptorTest {
     }
 
     @Test
-    void defaultTriggers() throws Exception {
+    void defaultTriggers(JenkinsRule j) throws Exception {
         ExtendedEmailPublisherDescriptor descriptor =
                 j.jenkins.getDescriptorByType(ExtendedEmailPublisherDescriptor.class);
         HtmlPage page = j.createWebClient().goTo("configure");
-
         assertTitlePage(page);
 
         List<DomNode> nodes = page.getByXPath(".//button[contains(text(),'Default Triggers')]");
@@ -302,10 +315,13 @@ class ExtendedEmailPublisherDescriptorTest {
     }
 
     @Test
-    void groovyClassPath() throws Exception {
+    void groovyClassPath(JenkinsRule j) throws Exception {
         ExtendedEmailPublisherDescriptor descriptor =
                 j.jenkins.getDescriptorByType(ExtendedEmailPublisherDescriptor.class);
-        HtmlPage page = j.createWebClient().goTo("configure");
+        HtmlPage page;
+        try(JenkinsRule.WebClient client = j.createWebClient()) {
+            page = client.goTo("configure");
+        }
 
         assertTitlePage(page);
 
@@ -320,6 +336,7 @@ class ExtendedEmailPublisherDescriptorTest {
 
         HtmlDivision div;
         HtmlButton addButton;
+        assertNotNull(Jenkins.getVersion());
         if (Jenkins.getVersion().isOlderThan(new VersionNumber("2.409"))) {
             nodes = settingName.getByXPath(
                     "../div[@class='setting-main']/div[@class='repeated-container' and span[starts-with(@id, 'yui-gen')]/span[@class='first-child']/button[./text()='Add']]");
@@ -377,7 +394,7 @@ class ExtendedEmailPublisherDescriptorTest {
     }
 
     @Test
-    void managePermissionShouldAccess() {
+    void managePermissionShouldAccess(JenkinsRule j) {
         final String USER = "user";
         final String MANAGER = "manager";
         j.jenkins.setSecurityRealm(j.createDummySecurityRealm());
@@ -408,7 +425,7 @@ class ExtendedEmailPublisherDescriptorTest {
     }
 
     @Test
-    void noAuthenticatorIsCreatedWhenCredentialsIsBlank() {
+    void noAuthenticatorIsCreatedWhenCredentialsIsBlank(JenkinsRule j) {
         ExtendedEmailPublisherDescriptor descriptor =
                 j.jenkins.getDescriptorByType(ExtendedEmailPublisherDescriptor.class);
 
@@ -438,7 +455,7 @@ class ExtendedEmailPublisherDescriptorTest {
     }
 
     @Test
-    void authenticatorIsCreatedWhenCredentialsIdProvided() throws Exception {
+    void authenticatorIsCreatedWhenCredentialsIdProvided(JenkinsRule j) throws Exception {
         UsernamePasswordCredentials c = new UsernamePasswordCredentialsImpl(
                 CredentialsScope.GLOBAL, "email-ext-admin", "Username/password for SMTP", "admin", "honeycomb");
         CredentialsProvider.lookupStores(j.jenkins).iterator().next().addCredentials(Domain.global(), c);
@@ -471,7 +488,7 @@ class ExtendedEmailPublisherDescriptorTest {
     }
 
     @Test
-    void testFixEmptyAndTrimNormal() throws Exception {
+    void testFixEmptyAndTrimNormal(JenkinsRule j) throws Exception {
         ExtendedEmailPublisherDescriptor descriptor =
                 j.jenkins.getDescriptorByType(ExtendedEmailPublisherDescriptor.class);
         // add a credential to the GLOBAL scope
@@ -501,7 +518,7 @@ class ExtendedEmailPublisherDescriptorTest {
     }
 
     @Test
-    void testFixEmptyAndTrimExtraSpaces() throws Exception {
+    void testFixEmptyAndTrimExtraSpaces(JenkinsRule j) throws Exception {
         ExtendedEmailPublisherDescriptor descriptor =
                 j.jenkins.getDescriptorByType(ExtendedEmailPublisherDescriptor.class);
         // add a credential to the GLOBAL scope
@@ -531,7 +548,7 @@ class ExtendedEmailPublisherDescriptorTest {
     }
 
     @Test
-    void testFixEmptyAndTrimEmptyString() throws Exception {
+    void testFixEmptyAndTrimEmptyString(JenkinsRule j) throws Exception {
         ExtendedEmailPublisherDescriptor descriptor =
                 j.jenkins.getDescriptorByType(ExtendedEmailPublisherDescriptor.class);
         MailAccount ma = new MailAccount();
@@ -556,7 +573,7 @@ class ExtendedEmailPublisherDescriptorTest {
     }
 
     @Test
-    void testFixEmptyAndTrimNull() throws Exception {
+    void testFixEmptyAndTrimNull(JenkinsRule j) throws Exception {
         ExtendedEmailPublisherDescriptor descriptor =
                 j.jenkins.getDescriptorByType(ExtendedEmailPublisherDescriptor.class);
         MailAccount ma = new MailAccount();
@@ -582,7 +599,7 @@ class ExtendedEmailPublisherDescriptorTest {
 
     @LocalData
     @Test
-    void persistedConfigurationBeforeJCasC() {
+    void persistedConfigurationBeforeJCasC(JenkinsRule j) {
         // Local data created using Email Extension 2.71 with the following code:
         /*
         HtmlPage page = j.createWebClient().goTo("configure");
@@ -771,7 +788,7 @@ class ExtendedEmailPublisherDescriptorTest {
     @Issue("JENKINS-63846")
     @LocalData
     @Test
-    void persistedConfigurationBeforeDefaultAddress() {
+    void persistedConfigurationBeforeDefaultAddress(JenkinsRule j) {
         // Local data created using Email Extension 2.72 with the following code:
         /*
         HtmlPage page = j.createWebClient().goTo("configure");
@@ -985,7 +1002,7 @@ class ExtendedEmailPublisherDescriptorTest {
 
     @Test
     @LocalData
-    void persistedConfigurationWithCredentialId() {
+    void persistedConfigurationWithCredentialId(JenkinsRule j) {
         // Local data created using Email Extension 2.72 with the following code:
         /*
         // add two credentials to the GLOBAL scope
@@ -1198,7 +1215,7 @@ class ExtendedEmailPublisherDescriptorTest {
     }
 
     @Test
-    void emptyScriptApproval() throws Exception {
+    void emptyScriptApproval(JenkinsRule j) throws Exception {
         j.jenkins.setSecurityRealm(j.createDummySecurityRealm());
         j.jenkins.setAuthorizationStrategy(new MockAuthorizationStrategy()
                 .grant(Jenkins.ADMINISTER)
