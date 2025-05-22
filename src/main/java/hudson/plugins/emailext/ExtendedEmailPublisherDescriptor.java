@@ -193,6 +193,7 @@ public final class ExtendedEmailPublisherDescriptor extends BuildStepDescriptor<
                     }
 
                     Secret password = c.getPassword();
+                    String username = c.getUsername();
                     if (acc.hasOAuth2Flow()) {
                         try {
                             password = acc.getOAuth2Flow().getToken(c);
@@ -207,7 +208,7 @@ public final class ExtendedEmailPublisherDescriptor extends BuildStepDescriptor<
                         }
                     }
 
-                    return new PasswordAuthentication(c.getUsername(), Secret.toString(password));
+                    return new PasswordAuthentication(username, password.getPlainText());
                 }
             };
 
@@ -394,10 +395,11 @@ public final class ExtendedEmailPublisherDescriptor extends BuildStepDescriptor<
         }
 
         if (acc.hasOAuth2Flow()) {
+            props.put("mail.smtp.auth", "true");
             props.put("mail.smtp.auth.mechanisms", "XOAUTH2");
             props.put("mail.smtp.auth.xoauth2.disable", "false");
-            props.put("mail.smtp.auth.login.disable","true");
-            props.put("mail.smtp.auth.plain.disable","true");
+            props.put("mail.smtp.auth.login.disable", "true");
+            props.put("mail.smtp.auth.plain.disable", "true");
 
             props.put("mail.debug.auth", "true");
         }

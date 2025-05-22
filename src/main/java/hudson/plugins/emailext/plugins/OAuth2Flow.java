@@ -19,6 +19,10 @@ public abstract class OAuth2Flow extends AbstractDescribableImpl<OAuth2Flow> imp
     @Restricted(NoExternalUse.class)
     public abstract Secret getToken(StandardUsernamePasswordCredentials credentials) throws Exception;
 
+    public boolean useUsername() {
+        return true;
+    }
+
     public static DescriptorExtensionList<OAuth2Flow, OAuth2FlowDescriptor> all() {
         return Jenkins.get().getDescriptorList(OAuth2Flow.class);
     }

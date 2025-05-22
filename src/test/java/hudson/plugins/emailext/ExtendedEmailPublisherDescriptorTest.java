@@ -85,7 +85,7 @@ class ExtendedEmailPublisherDescriptorTest {
     void testGlobalConfigDefaultState(JenkinsRule j) throws Exception {
         HtmlPage page;
 
-        try(JenkinsRule.WebClient client = j.createWebClient()) {
+        try (JenkinsRule.WebClient client = j.createWebClient()) {
             page = client.goTo("configure");
         }
 
@@ -194,7 +194,7 @@ class ExtendedEmailPublisherDescriptorTest {
         ExtendedEmailPublisherDescriptor descriptor =
                 j.jenkins.getDescriptorByType(ExtendedEmailPublisherDescriptor.class);
         HtmlPage page;
-        try(JenkinsRule.WebClient client = j.createWebClient()) {
+        try (JenkinsRule.WebClient client = j.createWebClient()) {
             page = client.goTo("configure");
         }
         assertNotNull(page);
@@ -210,7 +210,7 @@ class ExtendedEmailPublisherDescriptorTest {
     void testSmtpPortRetainsSetValue(JenkinsRule j) throws Exception {
         ExtendedEmailPublisherDescriptor descriptor =
                 j.jenkins.getDescriptorByType(ExtendedEmailPublisherDescriptor.class);
-        try(JenkinsRule.WebClient client = j.createWebClient()) {
+        try (JenkinsRule.WebClient client = j.createWebClient()) {
             HtmlPage page = client.goTo("configure");
             HtmlNumberInput smtpPort = page.getElementByName("_.smtpPort");
             smtpPort.setValue("587");
@@ -230,7 +230,7 @@ class ExtendedEmailPublisherDescriptorTest {
         ExtendedEmailPublisherDescriptor descriptor =
                 j.jenkins.getDescriptorByType(ExtendedEmailPublisherDescriptor.class);
         HtmlPage page;
-        try(JenkinsRule.WebClient client = j.createWebClient()) {
+        try (JenkinsRule.WebClient client = j.createWebClient()) {
             page = client.goTo("configure");
         }
         assertNotNull(page);
@@ -247,7 +247,7 @@ class ExtendedEmailPublisherDescriptorTest {
         ExtendedEmailPublisherDescriptor descriptor =
                 j.jenkins.getDescriptorByType(ExtendedEmailPublisherDescriptor.class);
         HtmlPage page;
-        try(JenkinsRule.WebClient client = j.createWebClient()) {
+        try (JenkinsRule.WebClient client = j.createWebClient()) {
             page = client.goTo("configure");
         }
         assertNotNull(page);
@@ -264,7 +264,7 @@ class ExtendedEmailPublisherDescriptorTest {
         ExtendedEmailPublisherDescriptor descriptor =
                 j.jenkins.getDescriptorByType(ExtendedEmailPublisherDescriptor.class);
         HtmlPage page;
-        try(JenkinsRule.WebClient client = j.createWebClient()) {
+        try (JenkinsRule.WebClient client = j.createWebClient()) {
             page = client.goTo("configure");
         }
         assertNotNull(page);
@@ -319,7 +319,7 @@ class ExtendedEmailPublisherDescriptorTest {
         ExtendedEmailPublisherDescriptor descriptor =
                 j.jenkins.getDescriptorByType(ExtendedEmailPublisherDescriptor.class);
         HtmlPage page;
-        try(JenkinsRule.WebClient client = j.createWebClient()) {
+        try (JenkinsRule.WebClient client = j.createWebClient()) {
             page = client.goTo("configure");
         }
 

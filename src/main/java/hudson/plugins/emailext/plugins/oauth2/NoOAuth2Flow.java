@@ -13,9 +13,7 @@ import org.kohsuke.stapler.DataBoundConstructor;
 
 public class NoOAuth2Flow extends OAuth2Flow {
     @DataBoundConstructor
-    public NoOAuth2Flow() {
-
-    }
+    public NoOAuth2Flow() {}
 
     @Override
     @Restricted(NoExternalUse.class)
