@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="utf-8"?>
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:f="/lib/form">
+  <f:section title="${%Extended E-mail Notification}">
+
+    <f:entry field="mailAccount">
+      <f:property/>
+    </f:entry>
+
+    <f:entry field="defaultSuffix"
+             help="/descriptor/hudson.tasks.Mailer/help/defaultSuffix"
+             title="${%Default user e-mail suffix}">
+      <f:textbox/>
+    </f:entry>
+
+    <f:advanced>
+      <f:entry field="charset" title="${%Charset}">
+        <f:textbox/>
+      </f:entry>
+
+      <f:entry title="${%Additional accounts}">
+        <f:repeatableProperty field="addAccounts" header="${%Account}">
+          <div align="right">
+            <f:repeatableDeleteButton/>
+          </div>
+        </f:repeatableProperty>
+      </f:entry>
+    </f:advanced>
+
+    <f:entry field="defaultContentType"
+             help="/plugin/email-ext/help/globalConfig/contentType.html"
+             title="${%Default Content Type}">
+      <f:select/>
+    </f:entry>
+
+    <f:entry field="listId"
+             help="/plugin/email-ext/help/globalConfig/listId.html"
+             title="${%List ID}">
+      <f:textbox/>
+    </f:entry>
+
+    <f:entry field="precedenceBulk"
+             title="${%Add 'Precedence: bulk' E-mail Header}"
+             help="/plugin/email-ext/help/globalConfig/precedenceBulk.html">
+      <f:checkbox/>
+    </f:entry>
+
+    <f:entry field="defaultRecipients"
+             help="/plugin/email-ext/help/globalConfig/defaultRecipients.html"
+             title="${%Default Recipients}">
+      <f:textbox/>
+    </f:entry>
+
+    <f:entry field="defaultReplyTo"
+             help="/plugin/email-ext/help/globalConfig/replyToList.html"
+             title="${%Reply To List}">
+      <f:textbox/>
+    </f:entry>
+
+    <f:entry field="emergencyReroute"
+             help="/plugin/email-ext/help/globalConfig/emergencyReroute.html"
+             title="${%Emergency reroute}">
+      <f:textbox/>
+    </f:entry>
+
+    <f:entry field="allowedDomains"
+             help="/plugin/email-ext/help/globalConfig/allowedDomains.html"
+             title="${%Allowed Domains}">
+      <f:textbox/>
+    </f:entry>
+
+    <f:entry field="excludedCommitters"
+             help="/plugin/email-ext/help/globalConfig/excludedRecipients.html"
+             title="${%Excluded Recipients}">
+      <f:textbox/>
+    </f:entry>
+
+    <f:entry field="defaultSubject"
+             help="/plugin/email-ext/help/globalConfig/defaultSubject.html"
+             title="${%Default Subject}">
+      <f:textbox/>
+    </f:entry>
+
+    <f:entry field="maxAttachmentSizeMb"
+             help="/plugin/email-ext/help/globalConfig/maxAttachmentSize.html"
+             title="${%Maximum Attachment Size}">
+      <f:number checkUrl="${rootURL}/${descriptor.descriptorUrl}/maxAttachmentSizeCheck"
+                checkDependsOn=""/>
+    </f:entry>
+
+    <f:entry field="defaultAttachBuildLog"
+             help="/plugin/email-ext/help/globalConfig/defaultAttachBuildLog.html"
+             title="${%Default Attach Build Log}">
+      <f:select/>
+    </f:entry>
+
+    <f:entry field="defaultBody"
+             help="/plugin/email-ext/help/globalConfig/defaultBody.html"
+             title="${%Default Content}">
+      <f:textarea/>
+    </f:entry>
+
+    <f:entry field="defaultPresendScript"
+             help="/plugin/email-ext/help/globalConfig/defaultPresendScript.html"
+             title="${%Default Pre-send Script}">
+      <f:textarea/>
+    </f:entry>
+
+    <f:entry field="defaultPostsendScript"
+             help="/plugin/email-ext/help/globalConfig/defaultPostsendScript.html"
+             title="${%Default Post-send Script}">
+      <f:textarea/>
+    </f:entry>
+
+    <f:entry title="${%Additional groovy classpath}"
+             help="/plugin/email-ext/help/globalConfig/defaultClasspath.html">
+      <f:repeatableProperty field="defaultClasspath">
+        <div align="right">
+          <f:repeatableDeleteButton/>
+        </div>
+      </f:repeatableProperty>
+    </f:entry>
+
+    <f:entry field="throttlingEnabled"
+             title="${%Enable Throttling}"
+             help="/plugin/email-ext/help/globalConfig/throttlingEnabled.html">
+      <f:checkbox/>
+    </f:entry>
+
+    <f:entry field="debugMode"
+             title="${%Enable Debug Mode}"
+             help="/plugin/email-ext/help/globalConfig/debugMode.html">
+      <f:checkbox/>
+    </f:entry>
+
+    <f:entry field="adminRequiredForTemplateTesting"
+             title="${%Require Administrator for Template Testing}"
+             help="/plugin/email-ext/help/globalConfig/requireAdmin.html">
+      <f:checkbox/>
+    </f:entry>
+
+    <f:entry field="watchingEnabled"
+             title="${%Enable watching for jobs}"
+             help="/plugin/email-ext/help/globalConfig/watching.html">
+      <f:checkbox/>
+    </f:entry>
+
+    <f:entry field="allowUnregisteredEnabled"
+             title="${%Allow sending to unregistered users}"
+             help="/plugin/email-ext/help/globalConfig/allowUnregistered.html">
+      <f:checkbox/>
+    </f:entry>
+
+    <f:advanced title="${%Default Triggers}">
+      <f:entry title="${%Default Triggers}"
+               help="/plugin/email-ext/help/globalConfig/defaultTriggers.html">
+        <j:forEach var="t" items="${descriptor.defaultTriggerDescriptors}">
+          <f:checkbox name="_.defaultTriggerIds"
+                      title="${t.displayName}"
+                      checked="${descriptor.defaultTriggerIds.contains(t.id)}"
+                      json="${t.id}"/>
+          <br/>
+        </j:forEach>
+      </f:entry>
+    </f:advanced>
+
+    <f:entry title="${%Content Token Reference}" field="tokens"/>
+
+  </f:section>
+</j:jelly>
