@@ -17,7 +17,6 @@ import java.util.logging.Logger;
 import jenkins.model.GlobalConfigurationCategory;
 import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
-import org.jenkinsci.Symbol;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.stapler.HttpResponse;
@@ -29,8 +28,7 @@ import org.kohsuke.stapler.interceptor.RequirePOST;
  * following the same pattern as the Credentials plugin's {@code GlobalCredentialsConfiguration}.
  */
 @Extension(ordinal = Integer.MAX_VALUE - 300)
-public class ExtendedEmailManagementLink extends ManagementLink
-        implements Describable<ExtendedEmailManagementLink> {
+public class ExtendedEmailManagementLink extends ManagementLink implements Describable<ExtendedEmailManagementLink> {
 
     private static final Logger LOGGER = Logger.getLogger(ExtendedEmailManagementLink.class.getName());
 
@@ -98,8 +96,7 @@ public class ExtendedEmailManagementLink extends ManagementLink
         return result;
     }
 
-    private boolean configureDescriptor(StaplerRequest2 req, JSONObject json, Descriptor<?> d)
-            throws FormException {
+    private boolean configureDescriptor(StaplerRequest2 req, JSONObject json, Descriptor<?> d) throws FormException {
         String name = d.getJsonSafeClassName();
         JSONObject js = json.has(name) ? json.getJSONObject(name) : new JSONObject();
         json.putAll(js);
@@ -127,7 +124,6 @@ public class ExtendedEmailManagementLink extends ManagementLink
      * instead of the main Configure System page.
      */
     @Extension
-    @Symbol("extendedEmailConfiguration")
     public static class Category extends GlobalConfigurationCategory {
         @Override
         public String getShortDescription() {

@@ -5,6 +5,8 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Extension;
 import hudson.model.AbstractProject;
 import hudson.model.Run;
+import hudson.plugins.emailext.plugins.EmailTrigger;
+import hudson.plugins.emailext.plugins.EmailTriggerDescriptor;
 import hudson.security.Permission;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Publisher;
@@ -14,10 +16,16 @@ import hudson.util.Secret;
 import jakarta.mail.Authenticator;
 import jakarta.mail.Session;
 import java.io.PrintStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiFunction;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
+import org.jenkinsci.Symbol;
+import org.kohsuke.stapler.DataBoundSetter;
+import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest2;
 
 /**
@@ -27,6 +35,7 @@ import org.kohsuke.stapler.StaplerRequest2;
  * {@link ExtendedEmailGlobalConfiguration#get()}.
  */
 @Extension
+@Symbol({"extendedEmailPublisher", "email-ext"})
 public final class ExtendedEmailPublisherDescriptor extends BuildStepDescriptor<Publisher> {
 
     public ExtendedEmailPublisherDescriptor() {
@@ -51,7 +60,7 @@ public final class ExtendedEmailPublisherDescriptor extends BuildStepDescriptor<
 
     /**
      * No-op: all configuration is now managed by {@link ExtendedEmailGlobalConfiguration}.
-     * The global.jelly for this descriptor renders only a redirect link.
+     * The config.jelly for this descriptor renders only a redirect link.
      */
     @Override
     public boolean configure(StaplerRequest2 req, JSONObject formData) throws FormException {
@@ -76,6 +85,7 @@ public final class ExtendedEmailPublisherDescriptor extends BuildStepDescriptor<
         return ExtendedEmailGlobalConfiguration.get().getDefaultSuffix();
     }
 
+    @DataBoundSetter
     public void setDefaultSuffix(String defaultSuffix) {
         ExtendedEmailGlobalConfiguration.get().setDefaultSuffix(defaultSuffix);
     }
@@ -84,6 +94,7 @@ public final class ExtendedEmailPublisherDescriptor extends BuildStepDescriptor<
         return ExtendedEmailGlobalConfiguration.get().isThrottlingEnabled();
     }
 
+    @DataBoundSetter
     public void setThrottlingEnabled(boolean throttlingEnabled) {
         ExtendedEmailGlobalConfiguration.get().setThrottlingEnabled(throttlingEnabled);
     }
@@ -101,6 +112,7 @@ public final class ExtendedEmailPublisherDescriptor extends BuildStepDescriptor<
         return ExtendedEmailGlobalConfiguration.get().getAddAccounts();
     }
 
+    @DataBoundSetter
     public void setAddAccounts(List<MailAccount> addAccounts) {
         ExtendedEmailGlobalConfiguration.get().setAddAccounts(addAccounts);
     }
@@ -135,6 +147,7 @@ public final class ExtendedEmailPublisherDescriptor extends BuildStepDescriptor<
         ExtendedEmailGlobalConfiguration.get().setSmtpPassword(password);
     }
 
+    @Deprecated
     public void setSmtpAuth(String userName, String password) {
         ExtendedEmailGlobalConfiguration.get().setSmtpAuth(userName, password);
     }
@@ -173,6 +186,7 @@ public final class ExtendedEmailPublisherDescriptor extends BuildStepDescriptor<
         return ExtendedEmailGlobalConfiguration.get().getCharset();
     }
 
+    @DataBoundSetter
     public void setCharset(String charset) {
         ExtendedEmailGlobalConfiguration.get().setCharset(charset);
     }
@@ -181,6 +195,7 @@ public final class ExtendedEmailPublisherDescriptor extends BuildStepDescriptor<
         return ExtendedEmailGlobalConfiguration.get().getDefaultContentType();
     }
 
+    @DataBoundSetter
     public void setDefaultContentType(String contentType) {
         ExtendedEmailGlobalConfiguration.get().setDefaultContentType(contentType);
     }
@@ -194,6 +209,7 @@ public final class ExtendedEmailPublisherDescriptor extends BuildStepDescriptor<
         return ExtendedEmailGlobalConfiguration.get().getDefaultSubject();
     }
 
+    @DataBoundSetter
     public void setDefaultSubject(String subject) {
         ExtendedEmailGlobalConfiguration.get().setDefaultSubject(subject);
     }
@@ -202,6 +218,7 @@ public final class ExtendedEmailPublisherDescriptor extends BuildStepDescriptor<
         return ExtendedEmailGlobalConfiguration.get().getDefaultBody();
     }
 
+    @DataBoundSetter
     public void setDefaultBody(String body) {
         ExtendedEmailGlobalConfiguration.get().setDefaultBody(body);
     }
@@ -210,6 +227,7 @@ public final class ExtendedEmailPublisherDescriptor extends BuildStepDescriptor<
         return ExtendedEmailGlobalConfiguration.get().getEmergencyReroute();
     }
 
+    @DataBoundSetter
     public void setEmergencyReroute(String emergencyReroute) {
         ExtendedEmailGlobalConfiguration.get().setEmergencyReroute(emergencyReroute);
     }
@@ -218,6 +236,7 @@ public final class ExtendedEmailPublisherDescriptor extends BuildStepDescriptor<
         return ExtendedEmailGlobalConfiguration.get().getMaxAttachmentSize();
     }
 
+    @DataBoundSetter
     public void setMaxAttachmentSize(long bytes) {
         ExtendedEmailGlobalConfiguration.get().setMaxAttachmentSize(bytes);
     }
@@ -226,6 +245,7 @@ public final class ExtendedEmailPublisherDescriptor extends BuildStepDescriptor<
         return ExtendedEmailGlobalConfiguration.get().getMailAccount();
     }
 
+    @DataBoundSetter
     public void setMailAccount(MailAccount mailAccount) {
         ExtendedEmailGlobalConfiguration.get().setMailAccount(mailAccount);
     }
@@ -234,6 +254,7 @@ public final class ExtendedEmailPublisherDescriptor extends BuildStepDescriptor<
         return ExtendedEmailGlobalConfiguration.get().getMaxAttachmentSizeMb();
     }
 
+    @DataBoundSetter
     public void setMaxAttachmentSizeMb(long mb) {
         ExtendedEmailGlobalConfiguration.get().setMaxAttachmentSizeMb(mb);
     }
@@ -242,6 +263,7 @@ public final class ExtendedEmailPublisherDescriptor extends BuildStepDescriptor<
         return ExtendedEmailGlobalConfiguration.get().getDefaultRecipients();
     }
 
+    @DataBoundSetter
     public void setDefaultRecipients(String recipients) {
         ExtendedEmailGlobalConfiguration.get().setDefaultRecipients(recipients);
     }
@@ -250,6 +272,7 @@ public final class ExtendedEmailPublisherDescriptor extends BuildStepDescriptor<
         return ExtendedEmailGlobalConfiguration.get().getAllowedDomains();
     }
 
+    @DataBoundSetter
     public void setAllowedDomains(String allowed) {
         ExtendedEmailGlobalConfiguration.get().setAllowedDomains(allowed);
     }
@@ -258,6 +281,7 @@ public final class ExtendedEmailPublisherDescriptor extends BuildStepDescriptor<
         return ExtendedEmailGlobalConfiguration.get().getExcludedCommitters();
     }
 
+    @DataBoundSetter
     public void setExcludedCommitters(String excluded) {
         ExtendedEmailGlobalConfiguration.get().setExcludedCommitters(excluded);
     }
@@ -271,6 +295,7 @@ public final class ExtendedEmailPublisherDescriptor extends BuildStepDescriptor<
         return ExtendedEmailGlobalConfiguration.get().getListId();
     }
 
+    @DataBoundSetter
     public void setListId(String id) {
         ExtendedEmailGlobalConfiguration.get().setListId(id);
     }
@@ -279,6 +304,7 @@ public final class ExtendedEmailPublisherDescriptor extends BuildStepDescriptor<
         return ExtendedEmailGlobalConfiguration.get().getPrecedenceBulk();
     }
 
+    @DataBoundSetter
     public void setPrecedenceBulk(boolean bulk) {
         ExtendedEmailGlobalConfiguration.get().setPrecedenceBulk(bulk);
     }
@@ -287,19 +313,25 @@ public final class ExtendedEmailPublisherDescriptor extends BuildStepDescriptor<
         return ExtendedEmailGlobalConfiguration.get().getDefaultAttachBuildLog();
     }
 
+    @DataBoundSetter
     public void setDefaultAttachBuildLog(int defaultAttachBuildLog) {
         ExtendedEmailGlobalConfiguration.get().setDefaultAttachBuildLog(defaultAttachBuildLog);
     }
 
-    @SuppressWarnings({"lgtm[jenkins/csrf]", "lgtm[jenkins/no-permission-check]", "unused"})
-    public ListBoxModel doFillDefaultAttachBuildLogItems() {
-        return ExtendedEmailGlobalConfiguration.get().doFillDefaultAttachBuildLogItems();
+    public AttachBuildLogMode getDefaultAttachBuildLogMode() {
+        return ExtendedEmailGlobalConfiguration.get().getDefaultAttachBuildLogMode();
+    }
+
+    @DataBoundSetter
+    public void setDefaultAttachBuildLogMode(AttachBuildLogMode defaultAttachBuildLogMode) {
+        ExtendedEmailGlobalConfiguration.get().setDefaultAttachBuildLogMode(defaultAttachBuildLogMode);
     }
 
     public String getDefaultReplyTo() {
         return ExtendedEmailGlobalConfiguration.get().getDefaultReplyTo();
     }
 
+    @DataBoundSetter
     public void setDefaultReplyTo(String to) {
         ExtendedEmailGlobalConfiguration.get().setDefaultReplyTo(to);
     }
@@ -312,6 +344,7 @@ public final class ExtendedEmailPublisherDescriptor extends BuildStepDescriptor<
         return ExtendedEmailGlobalConfiguration.get().isAdminRequiredForTemplateTesting();
     }
 
+    @DataBoundSetter
     public void setAdminRequiredForTemplateTesting(boolean requireAdmin) {
         ExtendedEmailGlobalConfiguration.get().setAdminRequiredForTemplateTesting(requireAdmin);
     }
@@ -324,10 +357,12 @@ public final class ExtendedEmailPublisherDescriptor extends BuildStepDescriptor<
         return ExtendedEmailGlobalConfiguration.get().isAllowUnregisteredEnabled();
     }
 
+    @DataBoundSetter
     public void setWatchingEnabled(boolean enabled) {
         ExtendedEmailGlobalConfiguration.get().setWatchingEnabled(enabled);
     }
 
+    @DataBoundSetter
     public void setAllowUnregisteredEnabled(boolean enabled) {
         ExtendedEmailGlobalConfiguration.get().setAllowUnregisteredEnabled(enabled);
     }
@@ -336,6 +371,7 @@ public final class ExtendedEmailPublisherDescriptor extends BuildStepDescriptor<
         return ExtendedEmailGlobalConfiguration.get().getDefaultPresendScript();
     }
 
+    @DataBoundSetter
     public void setDefaultPresendScript(@CheckForNull String script) {
         ExtendedEmailGlobalConfiguration.get().setDefaultPresendScript(script);
     }
@@ -344,6 +380,7 @@ public final class ExtendedEmailPublisherDescriptor extends BuildStepDescriptor<
         return ExtendedEmailGlobalConfiguration.get().getDefaultPostsendScript();
     }
 
+    @DataBoundSetter
     public void setDefaultPostsendScript(@CheckForNull String script) {
         ExtendedEmailGlobalConfiguration.get().setDefaultPostsendScript(script);
     }
@@ -352,6 +389,7 @@ public final class ExtendedEmailPublisherDescriptor extends BuildStepDescriptor<
         return ExtendedEmailGlobalConfiguration.get().getDefaultClasspath();
     }
 
+    @DataBoundSetter
     public void setDefaultClasspath(List<GroovyScriptPath> defaultClasspath) throws FormException {
         ExtendedEmailGlobalConfiguration.get().setDefaultClasspath(defaultClasspath);
     }
@@ -360,6 +398,7 @@ public final class ExtendedEmailPublisherDescriptor extends BuildStepDescriptor<
         return ExtendedEmailGlobalConfiguration.get().getDefaultTriggerIds();
     }
 
+    @DataBoundSetter
     public void setDefaultTriggerIds(List<String> triggerIds) {
         ExtendedEmailGlobalConfiguration.get().setDefaultTriggerIds(triggerIds);
     }
@@ -375,8 +414,7 @@ public final class ExtendedEmailPublisherDescriptor extends BuildStepDescriptor<
     }
 
     @SuppressWarnings({"lgtm[jenkins/csrf]", "lgtm[jenkins/no-permission-check]"})
-    public FormValidation doRecipientListRecipientsCheck(
-            @org.kohsuke.stapler.QueryParameter final String value) {
+    public FormValidation doRecipientListRecipientsCheck(@org.kohsuke.stapler.QueryParameter final String value) {
         return ExtendedEmailGlobalConfiguration.get().doRecipientListRecipientsCheck(value);
     }
 
@@ -393,6 +431,7 @@ public final class ExtendedEmailPublisherDescriptor extends BuildStepDescriptor<
         return ExtendedEmailGlobalConfiguration.get().isDebugMode();
     }
 
+    @DataBoundSetter
     public void setDebugMode(boolean debugMode) {
         ExtendedEmailGlobalConfiguration.get().setDebugMode(debugMode);
     }
@@ -418,5 +457,24 @@ public final class ExtendedEmailPublisherDescriptor extends BuildStepDescriptor<
     public FormValidation doCheckInlineAttachmentsPattern(@QueryParameter String value) {
         return ExtendedEmailGlobalConfiguration.get().validateAttachmentPattern(value);
     }
-    
+
+    public List<EmailTriggerDescriptor> getTriggerDescriptors() {
+        return EmailTrigger.all();
+    }
+
+    public List<EmailTrigger> getDefaultTriggerInstances() {
+        List<EmailTrigger> triggers = new ArrayList<>();
+        for (String triggerId : getDefaultTriggerIds()) {
+            hudson.model.Descriptor<?> desc = Jenkins.get().getDescriptor(triggerId);
+            if (desc instanceof EmailTriggerDescriptor emailTriggerDescriptor) {
+                try {
+                    triggers.add(emailTriggerDescriptor.createDefault());
+                } catch (FormException e) {
+                    Logger.getLogger(ExtendedEmailPublisherDescriptor.class.getName())
+                            .log(Level.WARNING, "Failed to create default trigger for " + triggerId, e);
+                }
+            }
+        }
+        return triggers;
+    }
 }

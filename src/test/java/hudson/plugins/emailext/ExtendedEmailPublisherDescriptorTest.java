@@ -2,7 +2,13 @@ package hudson.plugins.emailext;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.jvnet.hudson.test.JenkinsMatchers.hasKind;
 
 import com.cloudbees.plugins.credentials.CredentialsProvider;
@@ -49,6 +55,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.BiFunction;
 import jenkins.model.Jenkins;
+import org.jenkinsci.plugins.scriptsecurity.scripts.ScriptApproval;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.Issue;
@@ -856,8 +863,7 @@ class ExtendedEmailPublisherDescriptorTest {
     @Test
     @Issue("JENKINS-41473")
     void testBothContentTypeAvailableInGlobalConfig() {
-        ExtendedEmailGlobalConfiguration globalConfig =
-                ExtendedEmailGlobalConfiguration.get();
+        ExtendedEmailGlobalConfiguration globalConfig = ExtendedEmailGlobalConfiguration.get();
 
         ListBoxModel items = globalConfig.doFillDefaultContentTypeItems();
 
@@ -878,7 +884,8 @@ class ExtendedEmailPublisherDescriptorTest {
 
         assertEquals("both", globalConfig.getDefaultContentType(), "Global content type should be set to 'both'");
 
-        descriptor = j.jenkins.getDescriptorByType(ExtendedEmailPublisherDescriptor.class);
+        ExtendedEmailPublisherDescriptor descriptor =
+                j.jenkins.getDescriptorByType(ExtendedEmailPublisherDescriptor.class);
         assertEquals(
                 "both", descriptor.getDefaultContentType(), "'both' content type should persist after save and reload");
     }

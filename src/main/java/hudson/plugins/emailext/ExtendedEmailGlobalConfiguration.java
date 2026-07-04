@@ -11,6 +11,7 @@ import hudson.Util;
 import hudson.init.InitMilestone;
 import hudson.init.Initializer;
 import hudson.model.Run;
+import hudson.plugins.emailext.plugins.EmailTrigger;
 import hudson.plugins.emailext.plugins.EmailTriggerDescriptor;
 import hudson.plugins.emailext.plugins.trigger.FailureTrigger;
 import hudson.security.Permission;
@@ -42,7 +43,6 @@ import jenkins.model.Jenkins;
 import jenkins.model.JenkinsLocationConfiguration;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang3.StringUtils;
-import org.jenkinsci.Symbol;
 import org.jenkinsci.plugins.scriptsecurity.scripts.ApprovalContext;
 import org.jenkinsci.plugins.scriptsecurity.scripts.ClasspathEntry;
 import org.jenkinsci.plugins.scriptsecurity.scripts.ScriptApproval;
@@ -58,7 +58,6 @@ import org.kohsuke.stapler.StaplerRequest2;
  * page in Manage Jenkins via {@link ExtendedEmailManagementLink}.
  */
 @Extension
-@Symbol({"email-ext", "extendedEmailPublisher"})
 public class ExtendedEmailGlobalConfiguration extends GlobalConfiguration {
 
     public static final Logger LOGGER = Logger.getLogger(ExtendedEmailGlobalConfiguration.class.getName());
@@ -77,7 +76,7 @@ public class ExtendedEmailGlobalConfiguration extends GlobalConfiguration {
     private static final String SMTP_STARTTLS_ENABLE_PROPERTY = "mail.smtp.starttls.enable";
     private static final String SMTP_STARTTLS_REQUIRED_PROPERTY = "mail.smtp.starttls.required";
     /**
-     * The default e-mail address suffix appended to the user name found from
+     * The default e-mail address suffix appended to the username found from
      * changelog, to send e-mails. Null if not configured.
      */
     private String defaultSuffix;
@@ -115,7 +114,7 @@ public class ExtendedEmailGlobalConfiguration extends GlobalConfiguration {
 
     private List<GroovyScriptPath> defaultClasspath = new ArrayList<>();
 
-    private transient List<EmailTriggerDescriptor> defaultTriggers = new ArrayList<>();
+    private final transient List<EmailTriggerDescriptor> defaultTriggers = new ArrayList<>();
 
     private List<String> defaultTriggerIds = new ArrayList<>();
 
@@ -145,7 +144,7 @@ public class ExtendedEmailGlobalConfiguration extends GlobalConfiguration {
     private String allowedDomains = null;
 
     /*
-     * This is a global excluded committers list for not sending commit emails.
+     * This is a globally excluded committers list for not sending commit emails.
      */
     private String excludedCommitters = "";
 
@@ -157,7 +156,9 @@ public class ExtendedEmailGlobalConfiguration extends GlobalConfiguration {
      * 1 = Attach Build Log
      * 2 = Compress and Attach Build Log
      */
-    private int defaultAttachBuildLog = 0;
+    private transient int defaultAttachBuildLog = 0;
+
+    private AttachBuildLogMode defaultAttachBuildLogMode = AttachBuildLogMode.NONE;
 
     /**
      * If non-null, set a List-ID email header.
@@ -256,6 +257,10 @@ public class ExtendedEmailGlobalConfiguration extends GlobalConfiguration {
             mailAccount.setAddress(null);
         }
 
+        if (defaultAttachBuildLogMode == null) {
+            defaultAttachBuildLogMode = AttachBuildLogMode.fromLegacyValue(defaultAttachBuildLog);
+        }
+
         return this;
     }
 
@@ -267,13 +272,11 @@ public class ExtendedEmailGlobalConfiguration extends GlobalConfiguration {
     @Initializer(after = InitMilestone.PLUGINS_PREPARED, before = InitMilestone.EXTENSIONS_AUGMENTED)
     public static void migrateConfigFile() {
         File jenkinsRoot = Jenkins.get().getRootDir();
-        File newFile =
-                new File(jenkinsRoot, ExtendedEmailGlobalConfiguration.class.getName() + ".xml");
+        File newFile = new File(jenkinsRoot, ExtendedEmailGlobalConfiguration.class.getName() + ".xml");
         if (newFile.exists()) {
             return;
         }
-        File oldFile = new File(
-                jenkinsRoot, "hudson.plugins.emailext.ExtendedEmailPublisherDescriptor.xml");
+        File oldFile = new File(jenkinsRoot, "hudson.plugins.emailext.ExtendedEmailPublisherDescriptor.xml");
         if (!oldFile.exists()) {
             return;
         }
@@ -325,12 +328,9 @@ public class ExtendedEmailGlobalConfiguration extends GlobalConfiguration {
         return true;
     }
 
-    @Initializer(after = InitMilestone.EXTENSIONS_AUGMENTED, before = InitMilestone.JOB_LOADED)
+    @Initializer(after = InitMilestone.SYSTEM_CONFIG_LOADED, before = InitMilestone.COMPLETED)
     public static void autoConfigure() {
         ExtendedEmailGlobalConfiguration config = ExtendedEmailGlobalConfiguration.get();
-        if (config == null) {
-            return;
-        }
 
         if (Jenkins.get().isUseSecurity()
                 && (!StringUtils.isBlank(config.getDefaultPostsendScript())
@@ -361,6 +361,7 @@ public class ExtendedEmailGlobalConfiguration extends GlobalConfiguration {
                     assert false : e1;
                 }
             }
+            config.save();
         }
     }
 
@@ -743,23 +744,24 @@ public class ExtendedEmailGlobalConfiguration extends GlobalConfiguration {
         this.precedenceBulk = bulk;
     }
 
+    @Deprecated
     public int getDefaultAttachBuildLog() {
-        return defaultAttachBuildLog;
+        return defaultAttachBuildLogMode.toLegacyValue();
     }
 
     @SuppressWarnings("unused")
-    @DataBoundSetter
+    @Deprecated
     public void setDefaultAttachBuildLog(int defaultAttachBuildLog) {
-        this.defaultAttachBuildLog = defaultAttachBuildLog;
+        this.defaultAttachBuildLogMode = AttachBuildLogMode.fromLegacyValue(defaultAttachBuildLog);
     }
 
-    @SuppressWarnings({"lgtm[jenkins/csrf]", "lgtm[jenkins/no-permission-check]", "unused"})
-    public ListBoxModel doFillDefaultAttachBuildLogItems() {
-        ListBoxModel items = new ListBoxModel();
-        items.add(Messages.attachBuildLog_doNotAttach(), "0");
-        items.add(Messages.attachBuildLog_attach(), "1");
-        items.add(Messages.attachBuildLog_compressAndAttach(), "2");
-        return items;
+    public AttachBuildLogMode getDefaultAttachBuildLogMode() {
+        return defaultAttachBuildLogMode;
+    }
+
+    @DataBoundSetter
+    public void setDefaultAttachBuildLogMode(AttachBuildLogMode mode) {
+        this.defaultAttachBuildLogMode = mode;
     }
 
     public String getDefaultReplyTo() {
@@ -889,14 +891,6 @@ public class ExtendedEmailGlobalConfiguration extends GlobalConfiguration {
         defaultTriggerIds = triggerIds;
     }
 
-    /**
-     * Returns all registered {@link EmailTriggerDescriptor}s for rendering the
-     * Default Triggers checkboxes in {@code global.jelly}.
-     */
-    public List<EmailTriggerDescriptor> getDefaultTriggerDescriptors() {
-        return hudson.plugins.emailext.plugins.EmailTrigger.all();
-    }
-
     @SuppressWarnings({"lgtm[jenkins/csrf]", "lgtm[jenkins/no-permission-check]", "unused"})
     public ListBoxModel doFillDefaultContentTypeItems() {
         ListBoxModel items = new ListBoxModel();
@@ -965,7 +959,7 @@ public class ExtendedEmailGlobalConfiguration extends GlobalConfiguration {
     }
 
     void setAuthenticatorProvider(BiFunction<MailAccount, Run<?, ?>, Authenticator> authenticatorProvider) {
-        ExtendedEmailGlobalConfiguration.get().setAuthenticatorProvider(authenticatorProvider);
+        this.authenticatorProvider = authenticatorProvider;
     }
 
     @SuppressWarnings({"lgtm/jenkins/csrf", "lgtm/jenkins/no-permission-check"})
@@ -1000,5 +994,9 @@ public class ExtendedEmailGlobalConfiguration extends GlobalConfiguration {
             return FormValidation.error(Messages.AttachmentUtils_PatternUnmatchedOpenBrace());
         }
         return FormValidation.ok();
+    }
+
+    public List<EmailTriggerDescriptor> getTriggerDescriptors() {
+        return EmailTrigger.all();
     }
 }
